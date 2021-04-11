@@ -12,14 +12,20 @@
                 class="item"
                 @dragover.prevent
                 @drop.prevent="dragDrop(index, $event)"
-                @dragenter="dragEnter(index)"
+                @dragenter="dragEnter(index, $event)"
                 @dragleave="dragLeave"
             >
                 <ColorPicker
                     draggable="true"
-                    :value="color.color"
+                    :value="
+                        dragIndex === index || dragging_on === index
+                            ? getColor(index, color)
+                            : color.color
+                    "
                     :class="{
-                        hide: dragIndex === index,
+                        hide:
+                            (dragIndex === index && dragging_on === -1) ||
+                            dragging_on === index,
                     }"
                     @input="updateColor(index, $event)"
                     @dragstart.native="dragStart(index, $event)"
@@ -46,6 +52,16 @@ export default class HomePage extends Vue {
     id = 0
     dragIndex = -1
     dragging_on = -1
+
+    beforeMount() {
+        if (localStorage) {
+            const colors = localStorage.getItem('colors')
+            if (colors) {
+                console.log(colors)
+                this.colors = JSON.parse(colors)
+            }
+        }
+    }
 
     getColor(index: number, color: { color: string; _id: number }) {
         const dragging_on = this.dragging_on
@@ -74,18 +90,20 @@ export default class HomePage extends Vue {
         this.dragIndex = -1
     }
 
-    dragEnter(index: number) {
+    dragEnter(index: number, event: DragEvent) {
         this.dragging_on = index
     }
 
-    dragLeave() {
+    dragLeave(event: DragEvent) {
         this.dragging_on = -1
     }
 
     dragDrop(drop_index: number, event: DragEvent) {
         const indexStr = event.dataTransfer?.getData('colorIndex')
+        this.dragging_on = -1
+        this.dragIndex = -1
         console.log({ indexStr })
-        if (indexStr) {
+        if (indexStr && Number(indexStr) !== drop_index) {
             const index = parseInt(indexStr)
             const colors = [...this.colors]
             const temp = colors[drop_index]
@@ -98,13 +116,23 @@ export default class HomePage extends Vue {
     new_color: string = '#3af'
     addColor() {
         this.colors.push({ color: this.new_color, _id: this.id++ })
-        this.new_color = '#3af'
+        const rgb = []
+        for (let i = 0; i < 3; i++) {
+            let val = Math.floor(Math.random() * 256).toString(16)
+            if (val.length === 1) val = '0' + val
+            rgb[i] = val
+        }
+        this.new_color = `#${rgb[0]}${rgb[1]}${rgb[2]}`
+        if (localStorage) {
+            localStorage.setItem('colors', JSON.stringify(this.colors))
+        }
     }
 
     updateColor(index: number, color: string) {
         const colors = [...this.colors]
         colors[index].color = color
         this.colors = colors
+        localStorage.setItem('colors', JSON.stringify(this.colors))
     }
 }
 </script>
@@ -138,7 +166,6 @@ export default class HomePage extends Vue {
 
 #colors {
     display: grid;
-    gap: 5px;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     grid-auto-rows: 100px;
 }
@@ -177,13 +204,13 @@ export default class HomePage extends Vue {
 }
 
 .item {
-    // background: #1c2e42;
-    border-radius: 3px;
     position: relative;
     cursor: pointer;
+    padding: 5px;
+    box-sizing: border-box;
 }
 
-.hide {
-    display: none;
+.hide > * {
+    opacity: 0;
 }
 </style>
