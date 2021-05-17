@@ -21,8 +21,10 @@
     "nuxt": "^2.14.12",
     "nuxt-property-decorator": "^2.9.1",
     "sass": "^1.32.8",
+    "uuid": "^8.3.2",
     "vanilla-picker": "^2.11.2",
-    "vue": "^2.6.12"
+    "vue": "^2.6.12",
+    "vue-toastification": "^1.7.11"
   },
   "devDependencies": {
     "@nuxt/types": "^2.15.1",
@@ -31,6 +33,7 @@
     "@nuxtjs/eslint-module": "^3.0.2",
     "@nuxtjs/tailwindcss": "^3.4.2",
     "@types/axios": "^0.14.0",
+    "@types/uuid": "^8.3.0",
     "@vue/test-utils": "^1.1.2",
     "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^10.1.0",

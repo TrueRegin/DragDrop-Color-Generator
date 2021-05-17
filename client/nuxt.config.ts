@@ -1,3 +1,4 @@
+import { NuxtConfig } from '@nuxt/types'
 import config from '../client_config'
 const { development_host, production_host } = config.client
 
@@ -20,7 +21,7 @@ export default {
     },
 
     // Global CSS: https://go.nuxtjs.dev/config-css
-    css: ['./assets/animations.scss'],
+    css: ['./assets/animations.scss', 'vue-toastification/dist/index.css'],
 
     // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
     plugins: [],
@@ -42,6 +43,7 @@ export default {
         '@nuxtjs/axios',
         // https://go.nuxtjs.dev/pwa
         '@nuxtjs/pwa',
+        'vue-toastification/nuxt',
     ],
 
     // Axios module configuration: https://go.nuxtjs.dev/config-axios
@@ -61,4 +63,4 @@ export default {
 
     // Build Configuration: https://go.nuxtjs.dev/config-build
     build: {},
-}
+} as NuxtConfig

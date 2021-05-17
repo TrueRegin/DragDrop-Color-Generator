@@ -1,19 +1,29 @@
 <template>
     <div class="container">
+        <h1>Ctrl + click a color to delete it.</h1>
+        <h1>Right click a color to copy it.</h1>
+        <h1>There is no undo functionality.</h1>
         <div id="new-color">
             <ColorPicker v-model="new_color" />
             <button @click="addColor">Add Color</button>
         </div>
 
-        <div id="colors" @dragend="dragEnd">
+        <transition-group
+            id="colors"
+            name="colorpop"
+            tag="div"
+            @dragend="dragEnd"
+        >
             <div
                 v-for="(color, index) in colors"
-                :key="index"
+                :key="color._id"
                 class="item"
                 @dragover.prevent
                 @drop.prevent="dragDrop(index, $event)"
-                @dragenter="dragEnter(index, $event)"
+                @dragenter="dragEnter(index)"
                 @dragleave="dragLeave"
+                @click.right.prevent.exact="copy(index)"
+                @click.ctrl.exact="deleteColor(index)"
             >
                 <ColorPicker
                     draggable="true"
@@ -31,7 +41,7 @@
                     @dragstart.native="dragStart(index, $event)"
                 />
             </div>
-        </div>
+        </transition-group>
     </div>
 </template>
 
@@ -40,6 +50,8 @@ import Vue from 'vue'
 import { Component } from 'nuxt-property-decorator'
 import ServerStatus from '@/components/ServerStatus.vue'
 import ColorPicker from '@/components/ColorPicker.vue'
+import { TYPE } from 'vue-toastification/src/ts/constants'
+import { v4 } from 'uuid'
 
 @Component({
     components: {
@@ -48,8 +60,7 @@ import ColorPicker from '@/components/ColorPicker.vue'
     },
 })
 export default class HomePage extends Vue {
-    colors: { color: string; _id: number }[] = []
-    id = 0
+    colors: { color: string; _id: string }[] = []
     dragIndex = -1
     dragging_on = -1
 
@@ -58,12 +69,13 @@ export default class HomePage extends Vue {
             const colors = localStorage.getItem('colors')
             if (colors) {
                 console.log(colors)
-                this.colors = JSON.parse(colors)
+                const colors_arr: any[] = JSON.parse(colors)
+                this.colors = colors_arr
             }
         }
     }
 
-    getColor(index: number, color: { color: string; _id: number }) {
+    getColor(index: number, color: { color: string; _id: string }) {
         const dragging_on = this.dragging_on
         const dragIndex = this.dragIndex
         const colors = this.colors
@@ -75,6 +87,13 @@ export default class HomePage extends Vue {
                 : color.color
 
         return retVal
+    }
+
+    deleteColor(index: number) {
+        const colors = [...this.colors]
+        colors.splice(index, 1)
+        this.colors = colors
+        this.updateStore()
     }
 
     dragStart(index: number, event: DragEvent) {
@@ -90,11 +109,11 @@ export default class HomePage extends Vue {
         this.dragIndex = -1
     }
 
-    dragEnter(index: number, event: DragEvent) {
+    dragEnter(index: number) {
         this.dragging_on = index
     }
 
-    dragLeave(event: DragEvent) {
+    dragLeave() {
         this.dragging_on = -1
     }
 
@@ -110,12 +129,13 @@ export default class HomePage extends Vue {
             colors[drop_index] = colors[index]
             colors[index] = temp
             this.colors = colors
+            this.updateStore()
         }
     }
 
     new_color: string = '#3af'
     addColor() {
-        this.colors.push({ color: this.new_color, _id: this.id++ })
+        this.colors.push({ color: this.new_color, _id: v4() })
         const rgb = []
         for (let i = 0; i < 3; i++) {
             let val = Math.floor(Math.random() * 256).toString(16)
@@ -123,16 +143,28 @@ export default class HomePage extends Vue {
             rgb[i] = val
         }
         this.new_color = `#${rgb[0]}${rgb[1]}${rgb[2]}`
-        if (localStorage) {
-            localStorage.setItem('colors', JSON.stringify(this.colors))
-        }
+        this.updateStore()
     }
 
     updateColor(index: number, color: string) {
         const colors = [...this.colors]
         colors[index].color = color
         this.colors = colors
+        this.updateStore()
+    }
+
+    updateStore() {
         localStorage.setItem('colors', JSON.stringify(this.colors))
+    }
+
+    copy(index: number) {
+        const color = this.colors[index].color
+        this.$toast.clear()
+        this.$toast(`Copied ${color} to clipboard!`, {
+            timeout: 2000,
+            type: TYPE.SUCCESS,
+        })
+        navigator.clipboard.writeText(color)
     }
 }
 </script>
@@ -212,5 +244,21 @@ export default class HomePage extends Vue {
 
 .hide > * {
     opacity: 0;
+}
+
+.colorpop-enter,
+.colorpop-leave-to {
+    opacity: 0;
+    transform: scale(0);
+}
+
+.colorpop-leave,
+.colorpop-enter-to {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.colorpop-enter-active {
+    transition: transform 0.13s, opacity 0.13s;
 }
 </style>

@@ -1,7 +1,11 @@
 <template>
-    <div class="color-picker-container" @click="openPicker">
+    <div class="color-picker-container" @click.exact="openPicker">
         <div ref="color" class="color-picker"></div>
-        <div class="color-swatch" :style="{ background: value }"></div>
+        <div
+            class="color-swatch"
+            :class="{ selected }"
+            :style="{ background: value }"
+        ></div>
     </div>
 </template>
 
@@ -14,11 +18,17 @@ import Vue from 'vue'
 export default class ColorPicker extends Vue {
     @Prop({ required: true }) value!: string
     picker?: Picker
+    selected = false
 
     openPicker(clickEvent: MouseEvent) {
         if (this.picker) {
             this.picker.openHandler(clickEvent)
         }
+        this.selected = true
+    }
+
+    onPickerClose() {
+        this.selected = false
     }
 
     changeColor(color: any) {
@@ -33,6 +43,7 @@ export default class ColorPicker extends Vue {
             color: this.value,
         })
         this.picker.onChange = this.changeColor
+        this.picker.onClose = this.onPickerClose
     }
 }
 </script>
@@ -48,6 +59,13 @@ export default class ColorPicker extends Vue {
         width: 100%;
         height: 100%;
         border-radius: 3px;
+
+        transition: transform 180ms;
+
+        &:hover,
+        &.selected {
+            transform: scale(0.9);
+        }
     }
 }
 </style>
